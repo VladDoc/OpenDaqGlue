@@ -66,6 +66,10 @@ int          (*Signal_Read)(DaqObjectPtr signal, uint64_t NumOfSamples, int time
 
 double*      (*Signal_GetSampleReadings)(DaqObjectPtr signal);
 int64_t*     (*Signal_GetSampleTimeStamps)(DaqObjectPtr signal);
+
+int          (*Signal_GetSampleReadingsToArray)(DaqObjectPtr signal, double* array, uint64_t len);
+int          (*Signal_GetSampleTimeStampsToArray)(DaqObjectPtr signal, int64_t* array, uint64_t len);
+
 int          (*Signal_GetSampleCountOfRead)(DaqObjectPtr signal);
 int          (*Signal_EraseSamples)(DaqObjectPtr signal);
 
@@ -226,6 +230,8 @@ void InitFunctions(void* handle)
 	GETFUN(Signal_Read, handle);
 	GETFUN(Signal_GetSampleReadings, handle);
 	GETFUN(Signal_GetSampleTimeStamps, handle);
+	GETFUN(Signal_GetSampleReadingsToArray, handle);
+	GETFUN(Signal_GetSampleTimeStampsToArray, handle);
 	GETFUN(Signal_GetSampleCountOfRead, handle);
 	GETFUN(Signal_EraseSamples, handle);
 }
@@ -328,8 +334,11 @@ void Test_CheckInstance()
 		assert(count > 0);
 
 		if(count) {
-			double* data = Signal_GetSampleReadings(signal);
-			int64_t* times = Signal_GetSampleTimeStamps(signal);
+			double data[10000];
+			int64_t times[10000];
+
+			Signal_GetSampleReadingsToArray(signal, data, num);
+			Signal_GetSampleTimeStampsToArray(signal, times, num);
 
 			for(int i = 0; i < count; ++i) {
 				const int billion = 1000000000;

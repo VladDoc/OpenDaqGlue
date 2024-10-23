@@ -416,7 +416,7 @@ double*      Signal_GetSampleReadings(DaqObjectPtr self)
 			if(signal->samples.readCount == SampleData::uninitialized)
 				return nullptr;
 
-			return signal->samples.readings.data();
+			return signal->samples.GetData();
 		}
 		return nullptr;
 	} catch(...) {
@@ -437,7 +437,7 @@ int64*       Signal_GetSampleTimeStamps(DaqObjectPtr self)
 			if(signal->samples.readCount == SampleData::uninitialized)
 				return nullptr;
 
-			return (int64*)signal->samples.timestamps.data();
+			return (int64*)signal->samples.GetTimestamps();
 		}
 		return nullptr;
 	} catch(...) {
@@ -479,6 +479,58 @@ int          Signal_EraseSamples(DaqObjectPtr self)
 		auto signal = dynamic_cast<daq::AppSignal*>(obj);
 		if(signal) {
 			return (signal->samples.Erase(), EC_OK);
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+
+EXPORTFUN int          Signal_GetSampleReadingsToArray(DaqObjectPtr self, double* array, uint64 len)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+		if(signal) {
+			if(signal->samples.readCount == SampleData::uninitialized)
+				return EC_UNINITIALIZED;
+
+			if(len > signal->samples.readCount)
+				len = signal->samples.readCount;
+
+			memcpy(array, signal->samples.GetData(), len * sizeof(*array));
+
+			return len;
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+
+EXPORTFUN int          Signal_GetSampleTimeStampsToArray(DaqObjectPtr self, int64* array, uint64 len)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+		if(signal) {
+			if(signal->samples.readCount == SampleData::uninitialized)
+				return EC_UNINITIALIZED;
+
+			if(len > signal->samples.readCount)
+				len = signal->samples.readCount;
+
+			memcpy(array, signal->samples.GetTimestamps(), len * sizeof(*array));
+
+			return len;
 		}
 		return EC_OBJECT_TYPE_MISMATCH;
 	} catch(...) {

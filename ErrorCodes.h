@@ -15,5 +15,6 @@ enum ErrorCodes
     EC_SIGNAL_ID_INVALID         = -7,
     EC_NOT_AVAILABLE             = -8,
     EC_IO_ERROR                  = -9,
-    EC_UNINITIALIZED             = -10
+    EC_UNINITIALIZED             = -10,
+    EC_INSUFFICIENT_SIZE         = -11
 };
