@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# KDevelop BS
+*.kdev4
+/.kdev4
+
+# CMake BS
+/build
+
