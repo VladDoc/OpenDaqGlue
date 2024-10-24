@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifdef _WIN32
 #include "dlfcn-win32/src/dlfcn.h"
 const char* modulename = "opendaq-bridge.dll";
@@ -9,9 +6,8 @@ const char* modulename = "opendaq-bridge.dll";
 const char* modulename = "./libopendaq-bridge.so";
 #endif
 
-
-
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
@@ -35,7 +31,7 @@ void          (*StdOut_EraseBuffer)      (void);
 
 DaqObjectPtr (*Instance_New)         	 (void);
 void         (*OpenDaqObject_Free)       (DaqObjectPtr self);
-void         (*StringPool_Free)       (const char* str);
+void         (*StringPool_Free)       	 (const char* str);
 
 int          (*OpenDaqObject_List)    (DaqObjectPtr self, const char* type);
 const char*  (*OpenDaqObject_Get)     (DaqObjectPtr self, const char* item);
@@ -72,6 +68,9 @@ int          (*Signal_GetSampleTimeStampsToArray)(DaqObjectPtr signal, int64_t* 
 
 int          (*Signal_GetSampleCountOfRead)(DaqObjectPtr signal);
 int          (*Signal_EraseSamples)(DaqObjectPtr signal);
+const char*  (*TimeStampToString)(int64_t timestamp);
+
+
 
 
 static const char* test_config =
@@ -234,7 +233,22 @@ void InitFunctions(void* handle)
 	GETFUN(Signal_GetSampleTimeStampsToArray, handle);
 	GETFUN(Signal_GetSampleCountOfRead, handle);
 	GETFUN(Signal_EraseSamples, handle);
+
+	GETFUN(TimeStampToString, handle);
 }
+
+void SaveToCSV(const char* path, double* values, int size)
+{
+	FILE* f = fopen(path, "w");
+	if(!f) return;
+
+	for(int i = 0; i < size-1; ++i) {
+		fprintf(f, "%f,", values[i]);
+	}
+
+	fprintf(f, "%f\n", values[size-1]);
+}
+
 
 void Test_CheckStdOutRedirect()
 {
@@ -327,34 +341,34 @@ void Test_CheckInstance()
 		DaqObjectPtr signal = OpenDaqObject_Select(channel, "signal", 0);
 		assert(signal);
 
-		int num = 10000;
+		int num = 1000;
 
-		int count = Signal_Read(signal, num, 1000);
-		printf("Count: %d\n", count);
-		assert(count > 0);
+		double data[1000] = {};
+		int64_t times[1000] = {};
 
-		if(count) {
-			double data[10000];
-			int64_t times[10000];
+		int current = 0;
 
-			Signal_GetSampleReadingsToArray(signal, data, num);
-			Signal_GetSampleTimeStampsToArray(signal, times, num);
+		while(current < num) {
+			int count = Signal_Read(signal, 20, 20);
+			printf("Count: %d\n", count);
+			//assert(count > 0);
+			if(count == 0) continue;
 
-			for(int i = 0; i < count; ++i) {
-				const int billion = 1000000000;
-				time_t seconds = times[i] / billion; // convert to seconds
-				int milliseconds = (times[i] % billion) / 1000000;
+			if(current + count > num)
+				count = num - current;
 
-				char time_since_epoch[100];
-				strcpy(time_since_epoch, asctime(localtime(&seconds)));
-				time_since_epoch[strlen(time_since_epoch) - 1] = '\0';
-
-				printf("%f:%s.%d\n",
-					   data[i],
-					   time_since_epoch,
-					   milliseconds);
-			}
+			Signal_GetSampleReadingsToArray(signal, data+current, count);
+			Signal_GetSampleTimeStampsToArray(signal, times+current, count);
+			current += count;
 		}
+
+		for(int i = 0; i < current; ++i) {
+			const char* timestr = TimeStampToString(times[i]);
+
+			printf("%f:%s\n", data[i], timestr);
+		}
+
+		SaveToCSV("output.csv", data, num);
 	} while(0);
 
 

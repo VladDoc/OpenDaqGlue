@@ -521,7 +521,7 @@ int AppSignal::Read(uint64_t NumOfSamples, int timeout)
     //SendTestData(signal, NumOfSamples);
 
     if(reader == nullptr)
-        reader = StreamReader(signal);
+        reader = StreamReader(signal, ReadTimeoutType::All);
 
     auto timeReader = TimeReader(reader);
 
@@ -539,7 +539,7 @@ int AppSignal::Read(uint64_t NumOfSamples, int timeout)
 
     daq::ReadStatus whu_happen = status.getReadStatus();
 
-    std::cout << (int)whu_happen << std::endl;
+    //std::cout << (int)whu_happen << std::endl;
 
     return samples.readCount;
 }

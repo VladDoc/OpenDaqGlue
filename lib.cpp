@@ -15,6 +15,9 @@
 
 #include "opendaq/opendaq.h"
 
+#include <chrono>
+#include <cstdio>
+
 static char greeting[] = "Greetings mortal\n";
 
 void pukToStream()
@@ -536,4 +539,28 @@ EXPORTFUN int          Signal_GetSampleTimeStampsToArray(DaqObjectPtr self, int6
 	} catch(...) {
 		return EC_GENERIC_ERROR;
 	}
+}
+
+const char*  TimeStampToString(int64 timestamp)
+{
+	std::chrono::system_clock::time_point tp;
+	static_assert(sizeof(timestamp) == sizeof(tp));
+
+	memcpy(&tp, &timestamp, sizeof(tp));
+
+	auto t = std::chrono::system_clock::to_time_t(tp);
+	auto datetime_se = tp.time_since_epoch();
+	auto datetime_se_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(datetime_se);
+	auto hundreds_ns = (datetime_se_ns % 1000000000)/100;  // 1000000000 - ns, std::chrono::system_clock 100 ns
+	auto* tm = gmtime(&t);
+
+	//static const char format[] = "yyyy-mm-dd hh:mm:ss.nanoseconds";
+	static char timeString[256];
+	std::strftime(std::data(timeString), std::size(timeString), "%F %T", tm);
+
+	static char secondFraction[16] = "00000000";
+	snprintf(secondFraction, std::size(secondFraction), ".%ld", hundreds_ns.count());
+	strcat(timeString, secondFraction);
+
+	return timeString;
 }
