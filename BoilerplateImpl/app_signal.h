@@ -54,6 +54,9 @@ public:
 
     virtual int Read(size_t NumOfSamples, int timeout);
 
+    virtual void SendDataPacket(double* data, size_t count);
+    virtual void SendTestDataPacket(size_t count, double sine_range);
+
     SampleData samples{};
 private:
     static void help();

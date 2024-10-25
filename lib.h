@@ -64,6 +64,10 @@ EXPORTFUN int          Signal_GetSampleTimeStampsToArray(DaqObjectPtr signal, in
 EXPORTFUN int          Signal_GetSampleCountOfRead(DaqObjectPtr signal);
 EXPORTFUN int          Signal_EraseSamples(DaqObjectPtr signal);
 
+EXPORTFUN int          Signal_SendDataPacket(DaqObjectPtr signal, double* data, uint64 count);
+EXPORTFUN int          Signal_SendTestDataPacket(DaqObjectPtr signal, uint64 count, double sine_range);
+
+
 EXPORTFUN const char*  TimeStampToString(int64 timestamp);
 
 /*

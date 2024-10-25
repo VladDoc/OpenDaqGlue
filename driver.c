@@ -70,6 +70,9 @@ int          (*Signal_GetSampleCountOfRead)(DaqObjectPtr signal);
 int          (*Signal_EraseSamples)(DaqObjectPtr signal);
 const char*  (*TimeStampToString)(int64_t timestamp);
 
+int          (*Signal_SendDataPacket)(DaqObjectPtr signal, double* data, uint64_t count);
+int          (*Signal_SendTestDataPacket)(DaqObjectPtr signal, uint64_t count, double sine_range);
+
 
 
 
@@ -234,6 +237,9 @@ void InitFunctions(void* handle)
 	GETFUN(Signal_GetSampleCountOfRead, handle);
 	GETFUN(Signal_EraseSamples, handle);
 
+	GETFUN(Signal_SendDataPacket, handle);
+	GETFUN(Signal_SendTestDataPacket, handle);
+
 	GETFUN(TimeStampToString, handle);
 }
 
@@ -332,19 +338,24 @@ void Test_CheckInstance()
 		//StringPool_Free(config2);
 	} while(0);
 
+	StringPool_Free(config);
+
+	DaqObjectPtr channel;
+	DaqObjectPtr signal;
+
+	int num = 1000;
+
+	double data[1000] = {};
+	int64_t times[1000] = {};
+
 	do {
 		PrintInfo("Reading Samples From Signal");
 
-		DaqObjectPtr channel = OpenDaqObject_Select(dev0, "channel", 0);
+		channel = OpenDaqObject_Select(dev0, "channel", 0);
 		assert(channel);
 
-		DaqObjectPtr signal = OpenDaqObject_Select(channel, "signal", 0);
+		signal = OpenDaqObject_Select(channel, "signal", 0);
 		assert(signal);
-
-		int num = 1000;
-
-		double data[1000] = {};
-		int64_t times[1000] = {};
 
 		int current = 0;
 
@@ -362,6 +373,8 @@ void Test_CheckInstance()
 			current += count;
 		}
 
+		assert(current == num);
+
 		for(int i = 0; i < current; ++i) {
 			const char* timestr = TimeStampToString(times[i]);
 
@@ -372,7 +385,20 @@ void Test_CheckInstance()
 	} while(0);
 
 
-	StringPool_Free(config);
+	do {
+		PrintInfo("Sending Test Data to Signal");
+
+		Signal_SendTestDataPacket(signal, num, 10.0);
+	} while(0);
+
+	do {
+		PrintInfo("Sending Data to Signal");
+
+		Signal_SendDataPacket(signal, data, num);
+	} while(0);
+
+	OpenDaqObject_Free(signal);
+	OpenDaqObject_Free(channel);
 	OpenDaqObject_Free(dev0);
 	OpenDaqObject_Free(instance);
 

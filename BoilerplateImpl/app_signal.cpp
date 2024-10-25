@@ -505,12 +505,30 @@ DataPacketPtr createPacketForSignal(const SignalPtr& signal, SizeT numSamples, I
     );
 }
 
-void SendTestData(const SignalConfigPtr& signal, size_t count)
+void AppSignal::SendDataPacket(double* data, size_t count)
 {
+    auto signal = this->object.asPtr<ISignalConfig>();
+
+    auto packet = createPacketForSignal(signal, count, 0);
+    auto packet_data = static_cast<double*>(packet.getData());
+
+    memcpy(packet_data, data, count);
+    signal.sendPacket(packet);
+}
+
+// Sends one full turn of a sine wave
+void AppSignal::SendTestDataPacket(size_t count, double sine_range)
+{
+    auto signal = this->object.asPtr<ISignalConfig>();
+
     auto packet = createPacketForSignal(signal, count, 0);
     auto data = static_cast<double*>(packet.getData());
+
+    auto pi_fraction = (2 * M_PI) / count;
+
     for(auto i = 0u; i < count; ++i)
-        data[i] = i+1;
+        data[i] = sin(pi_fraction * i) * sine_range;
+
     signal.sendPacket(packet);
 }
 

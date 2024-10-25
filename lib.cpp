@@ -489,7 +489,7 @@ int          Signal_EraseSamples(DaqObjectPtr self)
 	}
 }
 
-EXPORTFUN int          Signal_GetSampleReadingsToArray(DaqObjectPtr self, double* array, uint64 len)
+int          Signal_GetSampleReadingsToArray(DaqObjectPtr self, double* array, uint64 len)
 {
 	auto obj = (OpenDaqObject*)self;
 
@@ -515,7 +515,7 @@ EXPORTFUN int          Signal_GetSampleReadingsToArray(DaqObjectPtr self, double
 	}
 }
 
-EXPORTFUN int          Signal_GetSampleTimeStampsToArray(DaqObjectPtr self, int64* array, uint64 len)
+int          Signal_GetSampleTimeStampsToArray(DaqObjectPtr self, int64* array, uint64 len)
 {
 	auto obj = (OpenDaqObject*)self;
 
@@ -546,6 +546,8 @@ const char*  TimeStampToString(int64 timestamp)
 	std::chrono::system_clock::time_point tp;
 	static_assert(sizeof(timestamp) == sizeof(tp));
 
+#pragma warning(suppress:0000)
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 	memcpy(&tp, &timestamp, sizeof(tp));
 
 	auto t = std::chrono::system_clock::to_time_t(tp);
@@ -563,4 +565,40 @@ const char*  TimeStampToString(int64 timestamp)
 	strcat(timeString, secondFraction);
 
 	return timeString;
+}
+
+int          Signal_SendDataPacket(DaqObjectPtr self, double* data, uint64 count)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+		if(signal) {
+			return (signal->SendDataPacket(data, count), EC_OK);
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+
+int          Signal_SendTestDataPacket(DaqObjectPtr self, uint64 count, double sine_range)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+		if(signal) {
+			return (signal->SendTestDataPacket(count, sine_range), EC_OK);
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
 }
