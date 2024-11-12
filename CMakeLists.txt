@@ -35,6 +35,7 @@ endif ()
 set(SHARED_LIB_SRC
     lib.cpp
     BoilerplateImpl/app_channel.cpp
+    BoilerplateImpl/app_descriptor.cpp
     BoilerplateImpl/app_device.cpp
     BoilerplateImpl/app_signal.cpp
     BoilerplateImpl/app_function_block.cpp
@@ -49,12 +50,16 @@ set(SHARED_LIB_SRC
 
 #set_source_files_properties(BoilerplateImpl/app_signal.cpp PROPERTIES COMPILE_OPTIONS "-fno-sanitize=vptr")
 
+include(FetchContent)
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 # Create the shared library (DLL in Windows)
 add_library(opendaq-bridge SHARED ${SHARED_LIB_SRC})
 
 # Link the openDAQ library to the shared library
-target_link_libraries(opendaq-bridge PRIVATE daq::opendaq)
+target_link_libraries(opendaq-bridge PRIVATE daq::opendaq nlohmann_json::nlohmann_json)
 # Add executables
 add_executable(driver ${DRIVER_SRC})
 add_executable(test-polygon test_polygon.cpp)

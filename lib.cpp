@@ -12,21 +12,23 @@
 #include "BoilerplateImpl/app_device.h"
 #include "BoilerplateImpl/app_input_port.h"
 #include "BoilerplateImpl/app_signal.h"
+#include "BoilerplateImpl/app_descriptor.h"
 
 #include "opendaq/opendaq.h"
 
 #include <chrono>
 #include <cstdio>
 
-static char greeting[] = "Greetings mortal\n";
+static char help[] = "Create an Instance via Instance_New to start";
+static char library_info[] = "OpenDAQ Glue version 0.0.69";
 
-void pukToStream()
+void LibraryHelp()
 {
-	std::cout << greeting;
+	puts(help);
 }
 
-char* talk(void) {
-	return greeting;
+const char* LibraryInfo(void) {
+	return library_info;
 }
 
 void          StdOut_PipeToString     (void)
@@ -105,11 +107,9 @@ const char*  OpenDaqObject_Get     (DaqObjectPtr self, const char* item)
 		return nullptr;
 
 	try {
-		auto str = obj->get(item);
-		auto cstr = str.c_str();
-		string_pool.emplace(std::move(str));
-
-		return cstr;
+		const auto& [it, inserted] =
+			string_pool.emplace(obj->get(item));
+		return it->c_str();
 	} catch(...) {
 		return nullptr;
 	}
@@ -151,12 +151,9 @@ DaqObjectPtr OpenDaqObject_Select  (DaqObjectPtr self, const char* type, uint64 
 		return nullptr;
 
 	try {
-		auto uptr = obj->select(type, index);
-		auto ptr = uptr.get();
-
-		createdPtrs.emplace(std::move(uptr));
-
-		return ptr;
+		const auto& [it, inserted] =
+			createdPtrs.emplace(obj->select(type, index));
+		return it->get();
 	} catch(...) {
 		return nullptr;
 	}
@@ -171,7 +168,7 @@ void         OpenDaqObject_Help    (DaqObjectPtr self)
 
 	if(obj) obj->help();
 	else {
-		std::cout << "Create an Instance via Instance_New" << std::endl;
+		std::cout << help << std::endl;
 	}
 }
 
@@ -228,12 +225,9 @@ DaqObjectPtr Device_Add              (DaqObjectPtr self, const char* type, const
 	try {
 		auto device = dynamic_cast<daq::AppDevice*>(obj);
 		if(device) {
-			auto uptr = device->add(type, value);
-			auto ptr = uptr.get();
-
-			createdPtrs.emplace(std::move(uptr));
-
-			return ptr;
+			const auto& [it, inserted] =
+				createdPtrs.emplace(device->Add(type, value));
+			return it->get();
 		}
 		return nullptr;
 	} catch(...) {
@@ -261,7 +255,9 @@ int          Device_Remove           (DaqObjectPtr self, const char* type, uint6
 	try {
 		auto device = dynamic_cast<daq::AppDevice*>(obj);
 		if(device) {
-			return device->remove(type, index);
+			OpenDaqObject_Free(obj->select(type, index).get());
+
+			return device->Remove(type, index);
 		}
 		return EC_OBJECT_TYPE_MISMATCH;
 	} catch(...) {
@@ -289,7 +285,7 @@ int          Device_LoadConfiguration(DaqObjectPtr self, const char* json)
 	try {
 		auto device = dynamic_cast<daq::AppDevice*>(obj);
 		if(device) {
-			return device->loadConfiguration(json);
+			return device->LoadConfiguration(json);
 		}
 		return EC_OBJECT_TYPE_MISMATCH;
 	} catch(...) {
@@ -318,7 +314,7 @@ const char*  Device_SaveConfiguration(DaqObjectPtr self)
 		auto device = dynamic_cast<daq::AppDevice*>(obj);
 		if(device) {
 			const auto& [it, inserted] =
-				string_pool.emplace(device->saveConfiguration());
+				string_pool.emplace(device->SaveConfiguration());
 			return it->c_str();
 		}
 		return nullptr;
@@ -602,3 +598,90 @@ int          Signal_SendTestDataPacket(DaqObjectPtr self, uint64 count, double s
 		return EC_GENERIC_ERROR;
 	}
 }
+
+int          OpenDaqObject_Print   (DaqObjectPtr self, const char* item)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		if((obj = dynamic_cast<OpenDaqObject*>(obj)) != nullptr) {
+			return obj->print(item);
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+
+EXPORTFUN int          Signal_LoadDataDescriptorFromJson(DaqObjectPtr self, const char* json)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	try {
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+		if(signal) {
+			return signal->LoadDataDescriptorFromJson(json);
+		}
+		return EC_OBJECT_TYPE_MISMATCH;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+EXPORTFUN int          Signal_LoadDataDescriptorFromJsonFile(DaqObjectPtr signal, const char* path)
+{
+	try {
+		auto str = read_file(path);
+
+		return Signal_LoadDataDescriptorFromJson(signal, str.c_str());
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}
+
+EXPORTFUN const char*  DataDescriptor_SaveToJson(DaqObjectPtr self)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return nullptr;
+
+	try {
+		auto desc = dynamic_cast<daq::AppDescriptor*>(obj);
+		if(desc) {
+			const auto& [it, inserted] =
+				string_pool.emplace(desc->SaveConfiguration());
+			return it->c_str();
+		}
+		return nullptr;
+	} catch(...) {
+		return nullptr;
+	}
+}
+EXPORTFUN int          DataDescriptor_SaveToJsonFile(DaqObjectPtr self, const char* path)
+{
+	auto obj = (OpenDaqObject*)self;
+
+	if(!contains_uptr(createdPtrs, obj))
+		return EC_INVALID_POINTER;
+
+	if(!dynamic_cast<daq::AppDescriptor*>(obj))
+		return EC_OBJECT_TYPE_MISMATCH;
+
+	auto str = DataDescriptor_SaveToJson(self);
+
+	if(str) {
+		std::ofstream out(path);
+		out << str;
+
+		return out.good() ? EC_OK : EC_IO_ERROR;
+	}
+
+	return EC_GENERIC_ERROR;
+}
+

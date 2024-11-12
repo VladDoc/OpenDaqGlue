@@ -39,6 +39,8 @@ struct SampleData
 
 BEGIN_NAMESPACE_OPENDAQ
 
+class AppDescriptor;
+
 class AppSignal : public OpenDaqObjectStaticImpl<OpenDaqObject, AppSignal, SignalPtr>
 {
 public:
@@ -56,6 +58,8 @@ public:
 
     virtual void SendDataPacket(double* data, size_t count);
     virtual void SendTestDataPacket(size_t count, double sine_range);
+
+    virtual int LoadDataDescriptorFromJson(const string_view json);
 
     SampleData samples{};
 private:
@@ -85,6 +89,7 @@ private:
     static void printTags(const TagsPtr& tags, std::streamsize indent, int indentLevel);
     static void printMetadata(const DictPtr<IString, IString>& metadata, std::streamsize indent, int indentLevel);
 
+    friend AppDescriptor;
     friend OpenDaqObjectStaticImpl<OpenDaqObject, AppSignal, SignalPtr>;
 
     StreamReaderPtr reader = nullptr;

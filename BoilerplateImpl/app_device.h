@@ -14,11 +14,11 @@ class AppDevice : public OpenDaqObjectStaticImpl<OpenDaqObject, AppDevice, Devic
 public:
     static bool processCommand(OpenDaqObject& device, const std::vector<std::string>& command);
 
-    virtual OpenDaqObjectPtr add(const string_view type, const string_view what);
-    virtual int remove(const string_view type, uint64_t index);
+    virtual OpenDaqObjectPtr Add(const string_view type, const string_view what);
+    virtual int Remove(const string_view type, uint64_t index);
 
-    virtual int loadConfiguration(const char* json);
-    virtual ::String saveConfiguration();
+    virtual int LoadConfiguration(const char* json);
+    virtual ::String SaveConfiguration();
 
     virtual ::String GetAvailableDeviceConnectionString(uint64_t index);
     virtual ::String GetAvailableFunctionBlockID(uint64_t index);
@@ -31,11 +31,7 @@ private:
 
     static void help();
 
-    static int set(const DevicePtr& device, const string_view, const string_view)
-    {
-        std::cout << "Unsupported Method AppDevice::set\n";
-        return EC_METHOD_NOT_IMPLEMENTED;
-    }
+    static int set(const DevicePtr& device, const string_view item, const string_view value);
 
     static int getCount(const DevicePtr& device, const string_view item);
 

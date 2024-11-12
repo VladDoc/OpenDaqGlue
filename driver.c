@@ -22,8 +22,8 @@ const char* modulename = "./libopendaq-bridge.so";
 
 typedef void* DaqObjectPtr;
 
-char*		  (*talk)					 (void);
-void 		  (*pukToStream) 			 (void);
+char*		  (*LibraryInfo)		     (void);
+void 		  (*LibraryHelp) 			 (void);
 void          (*StdOut_PipeToString)     (void);
 const char*   (*StdOut_GetBufferString)  (void);
 void          (*StdOut_Default)          (void);
@@ -33,6 +33,7 @@ DaqObjectPtr (*Instance_New)         	 (void);
 void         (*OpenDaqObject_Free)       (DaqObjectPtr self);
 void         (*StringPool_Free)       	 (const char* str);
 
+int          (*OpenDaqObject_Print)   (DaqObjectPtr self, const char* item);
 int          (*OpenDaqObject_List)    (DaqObjectPtr self, const char* type);
 const char*  (*OpenDaqObject_Get)     (DaqObjectPtr self, const char* item);
 int          (*OpenDaqObject_GetCount)(DaqObjectPtr self, const char* itemArray);
@@ -73,128 +74,22 @@ const char*  (*TimeStampToString)(int64_t timestamp);
 int          (*Signal_SendDataPacket)(DaqObjectPtr signal, double* data, uint64_t count);
 int          (*Signal_SendTestDataPacket)(DaqObjectPtr signal, uint64_t count, double sine_range);
 
+int          (*Signal_LoadDataDescriptorFromJson)(DaqObjectPtr signal, const char* json);
+int          (*Signal_LoadDataDescriptorFromJsonFile)(DaqObjectPtr signal, const char* path);
+
+const char*  (*DataDescriptor_SaveToJson)(DaqObjectPtr signal);
+int          (*DataDescriptor_SaveToJsonFile)(DaqObjectPtr signal, const char* path);
 
 
 
-static const char* test_config =
-"{\n"
-"    \"__type\": \"Instance\",\n"
-"    \"rootDevice\": {\n"
-"        \"58f4eae6-072b-49ab-9104-019fdc74a42f\": {\n"
-"            \"__type\": \"Device\",\n"
-"            \"name\": \"openDAQ Client\",\n"
-"            \"Dev\": {\n"
-"                \"__type\": \"Folder\",\n"
-"                \"items\": {\n"
-"                    \"miniaudiodev0\": {\n"
-"                        \"__type\": \"Device\",\n"
-"                        \"Sig\": {\n"
-"                            \"__type\": \"Folder\",\n"
-"                            \"items\": {\n"
-"                                \"time\": {\n"
-"                                    \"__type\": \"Signal\",\n"
-"                                    \"dataDescriptor\": {\n"
-"                                        \"__type\": \"DataDescriptor\",\n"
-"                                        \"name\": \"Time\",\n"
-"                                        \"sampleType\": 10,\n"
-"                                        \"unit\": {\n"
-"                                            \"__type\": \"Unit\",\n"
-"                                            \"symbol\": \"s\",\n"
-"                                            \"name\": \"second\",\n"
-"                                            \"quantity\": \"time\"\n"
-"                                        },\n"
-"                                        \"dimensions\": [],\n"
-"                                        \"rule\": {\n"
-"                                            \"__type\": \"DataRule\",\n"
-"                                            \"ruleType\": 1,\n"
-"                                            \"params\": {\n"
-"                                                \"__type\": \"Dict\",\n"
-"                                                \"values\": [\n"
-"                                                    {\n"
-"                                                        \"key\": \"delta\",\n"
-"                                                        \"value\": 1\n"
-"                                                    },\n"
-"                                                    {\n"
-"                                                        \"key\": \"start\",\n"
-"                                                        \"value\": 0\n"
-"                                                    }\n"
-"                                                ]\n"
-"                                            }\n"
-"                                        },\n"
-"                                        \"origin\": \"\",\n"
-"                                        \"tickResolution\": {\n"
-"                                            \"__type\": \"Ratio\",\n"
-"                                            \"num\": 1,\n"
-"                                            \"den\": 44100\n"
-"                                        },\n"
-"                                        \"metadata\": {\n"
-"                                            \"__type\": \"Dict\",\n"
-"                                            \"values\": []\n"
-"                                        },\n"
-"                                        \"structFields\": []\n"
-"                                    },\n"
-"                                    \"public\": true,\n"
-"                                    \"visible\": false\n"
-"                                }\n"
-"                            }\n"
-"                        },\n"
-"                        \"IO\": {\n"
-"                            \"__type\": \"IoFolder\",\n"
-"                            \"items\": {\n"
-"                                \"audio\": {\n"
-"                                    \"__type\": \"Channel\",\n"
-"                                    \"typeId\": \"audio_channel\",\n"
-"                                    \"Sig\": {\n"
-"                                        \"__type\": \"Folder\",\n"
-"                                        \"items\": {\n"
-"                                            \"Audio\": {\n"
-"                                                \"__type\": \"Signal\",\n"
-"                                                \"domainSignalId\": \"/58f4eae6-072b-49ab-9104-019fdc74a42f/Dev/miniaudiodev0/Sig/time\",\n"
-"                                                \"dataDescriptor\": {\n"
-"                                                    \"__type\": \"DataDescriptor\",\n"
-"                                                    \"name\": \"Monitor of Family 17h (Models 10h-1fh) HD Audio Controller Analog Stereo\",\n"
-"                                                    \"sampleType\": 1,\n"
-"                                                    \"dimensions\": [],\n"
-"                                                    \"valueRange\": {\n"
-"                                                        \"__type\": \"Range\",\n"
-"                                                        \"low\": -2.0,\n"
-"                                                        \"high\": 2.0\n"
-"                                                    },\n"
-"                                                    \"rule\": {\n"
-"                                                        \"__type\": \"DataRule\",\n"
-"                                                        \"ruleType\": 3,\n"
-"                                                        \"params\": {\n"
-"                                                            \"__type\": \"Dict\",\n"
-"                                                            \"values\": []\n"
-"                                                        }\n"
-"                                                    },\n"
-"                                                    \"origin\": \"\",\n"
-"                                                    \"metadata\": {\n"
-"                                                        \"__type\": \"Dict\",\n"
-"                                                        \"values\": []\n"
-"                                                    },\n"
-"                                                    \"structFields\": []\n"
-"                                                },\n"
-"                                                \"public\": true\n"
-"                                            }\n"
-"                                        }\n"
-"                                    }\n"
-"                                }\n"
-"                            }\n"
-"                        }\n"
-"                    }\n"
-"                }\n"
-"            }\n"
-"        }\n"
-"    }\n"
-"}";
 
+static const char* test_config_path = "config.json";
 
 void InitFunctions(void* handle)
 {
 
-	GETFUN(talk, handle);
-	GETFUN(pukToStream, handle);
+	GETFUN(LibraryHelp, handle);
+	GETFUN(LibraryInfo, handle);
 	GETFUN(StdOut_Default, handle);
 	GETFUN(StdOut_GetBufferString, handle);
 	GETFUN(StdOut_PipeToString, handle);
@@ -204,6 +99,7 @@ void InitFunctions(void* handle)
 	GETFUN(OpenDaqObject_Free, handle);
 	GETFUN(StringPool_Free, handle);
 
+	GETFUN(OpenDaqObject_Print, handle);
 	GETFUN(OpenDaqObject_List, handle);
 	GETFUN(OpenDaqObject_Get, handle);
 	GETFUN(OpenDaqObject_GetCount, handle);
@@ -240,6 +136,12 @@ void InitFunctions(void* handle)
 	GETFUN(Signal_SendDataPacket, handle);
 	GETFUN(Signal_SendTestDataPacket, handle);
 
+	GETFUN(Signal_LoadDataDescriptorFromJson, handle);
+	GETFUN(Signal_LoadDataDescriptorFromJsonFile, handle);
+
+	GETFUN(DataDescriptor_SaveToJson, handle);
+	GETFUN(DataDescriptor_SaveToJsonFile, handle);
+
 	GETFUN(TimeStampToString, handle);
 }
 
@@ -259,18 +161,54 @@ void SaveToCSV(const char* path, double* values, int size)
 void Test_CheckStdOutRedirect()
 {
 	StdOut_PipeToString();
-	pukToStream();
+	LibraryHelp();
 	const char* str = StdOut_GetBufferString();
 	StdOut_Default();
 	printf("%s", str);
-	const char* str2 = talk(); // same text
-	assert(strcmp(str, str2) == 0);
+	const char* str2 = LibraryInfo();
+	assert(str);
+	assert(str2);
+
+	puts(str);
+	puts(str2);
 
 	StdOut_EraseBuffer();
 
 	Success();
 	puts("Test_CheckStdOutRedirect: Success\n");
 	ResetColors();
+}
+
+void Test_ChangeConfig()
+{
+	DaqObjectPtr instance = Instance_New();
+	assert(instance);
+
+	Device_LoadConfiguration(instance, "");
+	OpenDaqObject_Free(instance);
+
+	instance = Instance_New();
+
+	do {
+		PrintInfo("Loading Test Config");
+		const char* old_config = Device_SaveConfiguration(instance);
+		Device_LoadConfigurationFromFile(instance, test_config_path);
+		const char* str = Device_SaveConfiguration(instance);
+		assert(strcmp(old_config, str) != 0);
+
+		puts(str);
+
+		StringPool_Free(str);
+
+		OpenDaqObject_Free(instance);
+
+		instance = Instance_New();
+		Device_LoadConfiguration(instance, "");
+
+		StringPool_Free(old_config);
+	} while(0);
+
+	OpenDaqObject_Free(instance);
 }
 
 void Test_CheckInstance()
@@ -300,7 +238,7 @@ void Test_CheckInstance()
 
 		int count = OpenDaqObject_GetCount(instance, "available-devices");
 		printf("Total devices count: %d\n", count);
-		int index = 0;
+		int index = 5;
 		if(count > 0)
 			connectionStringDev0 = Device_GetAvailableDeviceConnectionString(instance, index);
 		printf("Connection String for Device[%d]: %s\n", index, connectionStringDev0);
@@ -313,19 +251,104 @@ void Test_CheckInstance()
 		PrintInfo("Adding Device:");
 
 		dev0 = Device_AddDevice(instance, connectionStringDev0);
+
+		//dev0 = OpenDaqObject_Select(instance, "device", 0);
 		assert(dev0);
 		const char * name = OpenDaqObject_Get(dev0, "name");
 		printf("Device Name: %s\n", name);
 
+		OpenDaqObject_List(dev0, "properties");
+
+		OpenDaqObject_Set(dev0, "NumberOfChannels", "1");
+		OpenDaqObject_Set(dev0, "GlobalSampleRate", "10000");
+		OpenDaqObject_Set(dev0, "AcquisitionLoopTime", "10");
+
+		OpenDaqObject_List(dev0, "properties");
+
 		StringPool_Free(name);
 	} while(0);
 
-	const char* config;
+	DaqObjectPtr channel;
 	do {
-		PrintInfo("Reading Instance Config:");
-		config = Device_SaveConfiguration(instance);
-		assert(config);
-		printf("%s\n", config);
+		PrintInfo("Reading Channel Properties");
+
+		channel = OpenDaqObject_Select(dev0, "channel", 0);
+		assert(channel);
+
+		OpenDaqObject_List(channel, "signals");
+		OpenDaqObject_List(channel, "input-ports");
+		OpenDaqObject_List(channel, "properties");
+
+		OpenDaqObject_Set(channel, "Amplitude", "6");
+		OpenDaqObject_Set(channel, "Frequency", "20");
+		OpenDaqObject_Set(channel, "UseGlobalSampleRate", "false");
+		OpenDaqObject_Set(channel, "SampleRate", "44100");
+
+		const char* sampleRateReading = OpenDaqObject_Get(channel, "SampleRate");
+		assert(sampleRateReading);
+
+		OpenDaqObject_List(channel, "properties");
+
+		//printf("SampleRate: %s", sampleRateReading);
+
+		StringPool_Free(sampleRateReading);
+	} while(0);
+
+	DaqObjectPtr signal;
+
+	do {
+		DaqObjectPtr descriptor;
+
+		PrintInfo("Reading Signal Properties");
+		signal = OpenDaqObject_Select(channel, "signal", 0);
+		assert(signal);
+		OpenDaqObject_List(signal, "properties");
+
+		descriptor = OpenDaqObject_Select(signal, "descriptor", 0);
+		assert(descriptor);
+		OpenDaqObject_List(descriptor, "properties");
+		DataDescriptor_SaveToJsonFile(descriptor, "descriptor1.json");
+		OpenDaqObject_Free(descriptor);
+
+		Signal_LoadDataDescriptorFromJsonFile(signal, "test-desc1.json");
+		descriptor = OpenDaqObject_Select(signal, "descriptor", 0);
+		OpenDaqObject_List(descriptor, "properties");
+		OpenDaqObject_Free(descriptor);
+
+		PrintInfo("Reading Domain Signal Properties");
+		DaqObjectPtr domain = OpenDaqObject_Select(signal, "domain-signal", 0);
+		assert(domain);
+		OpenDaqObject_List(domain, "properties");
+
+		descriptor = OpenDaqObject_Select(domain, "descriptor", 0);
+		assert(descriptor);
+		OpenDaqObject_List(descriptor, "properties");
+		DataDescriptor_SaveToJsonFile(descriptor, "descriptor2.json");
+
+		Signal_LoadDataDescriptorFromJsonFile(domain, "test-desc2.json");
+		descriptor = OpenDaqObject_Select(domain, "descriptor", 0);
+		OpenDaqObject_List(descriptor, "properties");
+		OpenDaqObject_Free(descriptor);
+
+		OpenDaqObject_Free(domain);
+	} while(0);
+
+	DaqObjectPtr functionBlock;
+	do {
+		//PrintInfo("Reading Function Block Properties");
+		//functionBlock = OpenDaqObject_Select(dev0, "function-block", 0);
+		//assert(functionBlock);
+		//OpenDaqObject_List(signal, "properties");
+	} while(0);
+
+
+
+	//const char* config;
+	do {
+		//PrintInfo("Reading Instance Config:");
+		//config = Device_SaveConfiguration(instance);
+		//assert(config);
+		//printf("%s\n", config);
 	} while(0);
 
 	do {
@@ -338,10 +361,7 @@ void Test_CheckInstance()
 		//StringPool_Free(config2);
 	} while(0);
 
-	StringPool_Free(config);
-
-	DaqObjectPtr channel;
-	DaqObjectPtr signal;
+	//StringPool_Free(config);
 
 	int num = 1000;
 
@@ -397,6 +417,8 @@ void Test_CheckInstance()
 		Signal_SendDataPacket(signal, data, num);
 	} while(0);
 
+
+	OpenDaqObject_Free(functionBlock);
 	OpenDaqObject_Free(signal);
 	OpenDaqObject_Free(channel);
 	OpenDaqObject_Free(dev0);
@@ -410,6 +432,7 @@ void Test_CheckInstance()
 void Test_Main()
 {
 	Test_CheckStdOutRedirect();
+	//Test_ChangeConfig();
 	Test_CheckInstance();
 }
 

@@ -9,17 +9,21 @@
 
 BEGIN_NAMESPACE_OPENDAQ
 
+class AppDescriptor;
 class AppFunctionBlock;
 class AppDevice;
+class AppChannel;
+class AppSignal;
+class AppInputPort;
 
 class AppPropertyObject : public OpenDaqObjectStaticImpl<OpenDaqObject, AppPropertyObject, PropertyObjectPtr>
 {
 public:
     static bool processCommand(OpenDaqObject& propObj, const std::vector<std::string>& command);
-    AppPropertyObject() = default;
-    AppPropertyObject(const PropertyObjectPtr& prop)
+
+    virtual ::String get(const string_view item) override
     {
-        this->object = prop;
+        return AppPropertyObject::get(this->object, item);
     }
 
 private:
@@ -28,7 +32,7 @@ private:
     static int      set     (const PropertyObjectPtr& prop, const string_view item, const string_view value);
     static ::String get     (const PropertyObjectPtr& prop, const string_view item);
 
-    static void help();
+    static void     help();
 
     static OpenDaqObjectPtr select(const PropertyObjectPtr& prop, const string_view item, uint64_t index)
     {
@@ -49,8 +53,12 @@ private:
     static void printProperty(const PropertyPtr& info);
     static std::string coreTypeToString(CoreType type);
 
+    friend AppInputPort;
+    friend AppChannel;
+    friend AppSignal;
     friend AppFunctionBlock;
     friend AppDevice;
+    friend AppDescriptor;
     friend OpenDaqObjectStaticImpl<OpenDaqObject, AppPropertyObject, PropertyObjectPtr>;
 };
 

@@ -3,6 +3,7 @@
 enum ErrorCodes
 {
     EC_OK                        =  0,
+    EC_SUCCESS                   =  0,
     EC_GENERIC_ERROR             = -1,
     EC_INVALID_HANDLE            = -2,
     EC_INVALID_POINTER           = -2,
@@ -16,5 +17,7 @@ enum ErrorCodes
     EC_NOT_AVAILABLE             = -8,
     EC_IO_ERROR                  = -9,
     EC_UNINITIALIZED             = -10,
-    EC_INSUFFICIENT_SIZE         = -11
+    EC_INSUFFICIENT_SIZE         = -11,
+    EC_INVALID_JSON              = -12,
+    EC_OPENDAQ_ERROR             = -13
 };

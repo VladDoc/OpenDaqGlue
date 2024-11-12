@@ -3,6 +3,8 @@
 #include <iostream>
 #include <iomanip>
 
+#include "app_property_object.h"
+
 BEGIN_NAMESPACE_OPENDAQ
 
 bool AppChannel::processCommand(OpenDaqObject& channel, const std::vector<std::string>& command)
@@ -11,6 +13,10 @@ bool AppChannel::processCommand(OpenDaqObject& channel, const std::vector<std::s
     if (command.empty())
         return false;
 
+    if (command[0] == "list")
+        return list(channelPtr, command[1]);
+    if (command[0] == "set")
+        return set(channelPtr, command[1], command[2]);
     if (command[0] == "print")
         return print(channelPtr, command[1]);
     if (command[0] == "help")
@@ -46,6 +52,31 @@ void AppChannel::help()
     std::cout << std::setw(25) << std::left << "print tags"
               << "Prints the channel's tags." << std::endl
               << std::endl;
+}
+
+int AppChannel::list(const ChannelPtr& channel, const string_view item)
+{
+    return AppFunctionBlock::list(channel, item);
+}
+
+OpenDaqObjectPtr AppChannel::select(const ChannelPtr& channel, const string_view item, uint64_t index)
+{
+    return AppFunctionBlock::select(channel, item, index);
+}
+
+int AppChannel::set(const ChannelPtr& channel, const string_view item, const string_view value)
+{
+    return AppPropertyObject::set(channel, item, value);
+}
+
+int AppChannel::getCount(const ChannelPtr& channel, const string_view item)
+{
+    return AppFunctionBlock::getCount(channel, item);
+}
+
+::String AppChannel::get(const ChannelPtr& channel, const string_view item)
+{
+    return AppFunctionBlock::get(channel, item);
 }
 
 END_NAMESPACE_OPENDAQ

@@ -130,7 +130,7 @@ OpenDaqObjectPtr AppDevice::select(const DevicePtr& device, const string_view it
 {
     if (item == "device")
     {
-        if (device.getDevices().getCount() > index)
+        if (index < device.getDevices().getCount())
             return Make_OpenDaqObjectPtr<AppDevice>(device.getDevices()[index]);
         else
             std::cout << "Index out of bounds." << std::endl;
@@ -139,7 +139,7 @@ OpenDaqObjectPtr AppDevice::select(const DevicePtr& device, const string_view it
 
     if (item == "function-block")
     {
-        if (device.getFunctionBlocks().getCount() > index)
+        if (index < device.getFunctionBlocks().getCount())
             return Make_OpenDaqObjectPtr<AppFunctionBlock>(device.getFunctionBlocks()[index]);
         else
             std::cout << "Index out of bounds." << std::endl;
@@ -148,7 +148,7 @@ OpenDaqObjectPtr AppDevice::select(const DevicePtr& device, const string_view it
 
     if (item == "channel")
     {
-        if (device.getChannels().getCount() > index)
+        if (index < device.getChannels().getCount())
             return Make_OpenDaqObjectPtr<AppChannel>(device.getChannels()[index]);
         else
             std::cout << "Index out of bounds." << std::endl;
@@ -201,7 +201,7 @@ int AppDevice::remove(const DevicePtr& device, const string_view item, uint64_t 
 {
     if (item == "device")
     {
-        if (device.getDevices().getCount() > index)
+        if (index < device.getDevices().getCount())
             device.removeDevice(device.getDevices()[index]);
         else
             std::cout << "Index out of bounds." << std::endl;
@@ -210,7 +210,7 @@ int AppDevice::remove(const DevicePtr& device, const string_view item, uint64_t 
     
     if (item == "function-block")
     {
-        if (device.getFunctionBlocks().getCount() > index)
+        if (index < device.getFunctionBlocks().getCount())
             device.removeFunctionBlock(device.getFunctionBlocks()[index]);
         else
             std::cout << "Index out of bounds." << std::endl;
@@ -302,27 +302,27 @@ void AppDevice::help()
               << std::endl;
 }
 
-OpenDaqObjectPtr AppDevice::add(const string_view type, const string_view what)
+OpenDaqObjectPtr AppDevice::Add(const string_view type, const string_view what)
 {
     return add(this->object, type, what);
 }
 
-int AppDevice::remove(const string_view type, uint64_t index)
+int AppDevice::Remove(const string_view type, uint64_t index)
 {
     return remove(this->object, type, index);
 }
 
-int AppDevice::loadConfiguration(const char* json)
+int AppDevice::LoadConfiguration(const char* json)
 {
     auto Idevice = this->object.asPtr<IDevice>();
     Idevice->loadConfiguration(String(json));
     return EC_OK;
 }
 
-::String AppDevice::saveConfiguration()
+::String AppDevice::SaveConfiguration()
 {
     auto Idevice = this->object.asPtr<IDevice>();
-    auto str = daq::String(nullptr);
+    auto str = daq::String("");
     Idevice->saveConfiguration(&str);
     return str.toStdString();
 }
@@ -370,5 +370,9 @@ int AppDevice::getCount(const DevicePtr& device, const string_view item)
     return nullptr;
 }
 
+int AppDevice::set(const DevicePtr& device, const string_view item, const string_view value)
+{
+    return AppPropertyObject::set(device, item, value);
+}
 
 END_NAMESPACE_OPENDAQ

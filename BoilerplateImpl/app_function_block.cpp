@@ -134,7 +134,7 @@ int AppFunctionBlock::print(const FunctionBlockPtr& fb, const string_view item)
         return EC_OK;
     }
 
-    return EC_PROPERTY_DOESNT_EXIST;
+    return AppPropertyObject::print(fb, item);
 }
 
 void AppFunctionBlock::help()
@@ -172,6 +172,49 @@ int AppFunctionBlock::getCount(const FunctionBlockPtr& fb, const string_view ite
         return fb.getInputPorts().getCount();
 
     return AppPropertyObject::getCount(fb, item);
+}
+
+int AppFunctionBlock::set(const FunctionBlockPtr& fb, const string_view item, const string_view value)
+{
+    return AppPropertyObject::set(fb, item, value);
+}
+
+::String AppFunctionBlock::get(const FunctionBlockPtr& fb, const string_view item)
+{
+    if (item == "name")
+    {
+        const auto name = fb.getFunctionBlockType().getName();
+        if (name.assigned() && name.getLength() > 0)
+            return name;
+        else
+            std::cout << "Not available." << std::endl;
+
+        return "";
+    }
+
+    if (item == "id")
+    {
+        const auto id = fb.getFunctionBlockType().getId();
+        if (id.assigned() && id.getLength() > 0)
+            return id;
+        else
+            std::cout << "Not available." << std::endl;
+
+        return "";
+    }
+
+    if (item == "description")
+    {
+        const auto desc = fb.getFunctionBlockType().getDescription();
+        if (desc.assigned() && desc.getLength() > 0)
+            return desc;
+        else
+            std::cout << "Not available." << std::endl;
+
+        return "";
+    }
+
+    return AppPropertyObject::get(fb, item);
 }
 
 END_NAMESPACE_OPENDAQ

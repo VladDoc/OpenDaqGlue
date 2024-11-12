@@ -82,9 +82,9 @@ public:
     virtual String           get     (const string_view item)
     {
         bool piped = IsPipedToString();
-        String oldbuf = piped ? GetBufferString() : "";
+        String oldbuf = GetBufferString();
         EraseBuffer();
-        if(!piped) PipeToString();
+        PipeToString();
 
         String result = "";
 

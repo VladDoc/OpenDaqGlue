@@ -16,19 +16,18 @@ class AppFunctionBlock : public OpenDaqObjectStaticImpl<OpenDaqObject, AppFuncti
 public:
     static bool processCommand(OpenDaqObject& obj, const std::vector<std::string>& command);
 
+    virtual ::String get(const string_view item) override
+    {
+        return AppFunctionBlock::get(this->object, item);
+    }
 private:
     static int              list(const FunctionBlockPtr& fb, const string_view item);
     static OpenDaqObjectPtr select(const FunctionBlockPtr& fb, const string_view item, uint64_t index);
     static int              print(const FunctionBlockPtr& fb, const string_view item);
     static void             help();
-
-    static int set(const BaseObjectPtr&, const string_view, const string_view)
-    {
-        std::cout << "Unsupported Method Asdf::set\n";
-        return EC_METHOD_NOT_IMPLEMENTED;
-    }
-
-    static int getCount(const FunctionBlockPtr& fb, const string_view item);
+    static ::String         get(const FunctionBlockPtr& fb, const string_view item);
+    static int              set(const FunctionBlockPtr& fb, const string_view item, const string_view value);
+    static int              getCount(const FunctionBlockPtr& fb, const string_view item);
 
     friend OpenDaqObjectStaticImpl<OpenDaqObject, AppFunctionBlock, FunctionBlockPtr>;
     friend AppChannel;

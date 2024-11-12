@@ -38,7 +38,6 @@ private:
     }
     static int   list(const BaseObjectPtr&, const string_view)
     {
-        std::cout << "Unsupported Method AppInputPort::list\n";
         return EC_METHOD_NOT_IMPLEMENTED;
     }
     static int   getCount(const BaseObjectPtr&, const string_view)

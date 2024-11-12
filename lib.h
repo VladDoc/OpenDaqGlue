@@ -6,8 +6,8 @@
 #define EXPORTFUN extern "C"
 #endif
 
-EXPORTFUN void pukToStream();
-EXPORTFUN char* talk(void);
+EXPORTFUN void          LibraryHelp(void);
+EXPORTFUN const char*   LibraryInfo(void);
 
 typedef void* DaqObjectPtr;
 
@@ -27,6 +27,7 @@ EXPORTFUN DaqObjectPtr Instance_New          (void);
 
 // Polymorphic methods:
 EXPORTFUN void         OpenDaqObject_Free    (DaqObjectPtr self);
+EXPORTFUN int          OpenDaqObject_Print   (DaqObjectPtr self, const char* item); // outputs to console
 EXPORTFUN int          OpenDaqObject_List    (DaqObjectPtr self, const char* type); // outputs to console
 EXPORTFUN const char*  OpenDaqObject_Get     (DaqObjectPtr self, const char* item);
 EXPORTFUN int          OpenDaqObject_GetCount(DaqObjectPtr self, const char* itemArray);
@@ -67,6 +68,11 @@ EXPORTFUN int          Signal_EraseSamples(DaqObjectPtr signal);
 EXPORTFUN int          Signal_SendDataPacket(DaqObjectPtr signal, double* data, uint64 count);
 EXPORTFUN int          Signal_SendTestDataPacket(DaqObjectPtr signal, uint64 count, double sine_range);
 
+EXPORTFUN int          Signal_LoadDataDescriptorFromJson(DaqObjectPtr signal, const char* json);
+EXPORTFUN int          Signal_LoadDataDescriptorFromJsonFile(DaqObjectPtr signal, const char* path);
+
+EXPORTFUN const char*  DataDescriptor_SaveToJson(DaqObjectPtr signal);
+EXPORTFUN int          DataDescriptor_SaveToJsonFile(DaqObjectPtr signal, const char* path);
 
 EXPORTFUN const char*  TimeStampToString(int64 timestamp);
 
