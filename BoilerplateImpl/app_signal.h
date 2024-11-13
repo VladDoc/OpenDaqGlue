@@ -69,15 +69,7 @@ private:
     static int set(const SignalPtr& signal, const string_view item, const string_view value);
     static OpenDaqObjectPtr select(const SignalPtr& signal, const string_view item, uint64_t index);
 
-    static int getCount(const SignalPtr& signal, const string_view item)
-    {
-        if (item == "related")
-        {
-            return signal.getRelatedSignals().getCount();
-        }
-
-        return EC_PROPERTY_DOESNT_EXIST;
-    }
+    static int getCount(const SignalPtr& signal, const string_view item);
 
 
     static void printDataDescriptor(const DataDescriptorPtr& descriptor, std::streamsize indent, int indentLevel);

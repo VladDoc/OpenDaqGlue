@@ -41,6 +41,7 @@ set(SHARED_LIB_SRC
     BoilerplateImpl/app_function_block.cpp
     BoilerplateImpl/app_property_object.cpp
     BoilerplateImpl/app_input_port.cpp
+    BoilerplateImpl/app_sync.cpp
     BoilerplateImpl/stdout_redirect.cpp
     BoilerplateImpl/OpenDaqObject.cpp
 )

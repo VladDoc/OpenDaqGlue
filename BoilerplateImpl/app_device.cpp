@@ -6,6 +6,7 @@
 #include "app_property_object.h"
 #include "app_channel.h"
 #include "app_signal.h"
+#include "app_sync.h"
 
 BEGIN_NAMESPACE_OPENDAQ
 
@@ -163,7 +164,14 @@ OpenDaqObjectPtr AppDevice::select(const DevicePtr& device, const string_view it
             std::cout << "Index out of bounds." << std::endl;
         return nullptr;
     }
-
+    if(item == "sync")
+    {
+        if (device.getSyncComponent().assigned())
+            return Make_OpenDaqObjectPtr<AppSync>(device.getSyncComponent());
+        else
+            std::cout << "Index out of bounds." << std::endl;
+        return nullptr;
+    }
     return nullptr;;
 }
 

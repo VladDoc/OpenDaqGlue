@@ -31,20 +31,10 @@ private:
     static OpenDaqObjectPtr select(const InputPortPtr& port, const string_view item, uint64_t index);
     static void             help();
 
-    static int set(const BaseObjectPtr&, const string_view, const string_view)
-    {
-        std::cout << "Unsupported Method AppInputPort::set\n";
-        return EC_METHOD_NOT_IMPLEMENTED;
-    }
-    static int   list(const BaseObjectPtr&, const string_view)
-    {
-        return EC_METHOD_NOT_IMPLEMENTED;
-    }
-    static int   getCount(const BaseObjectPtr&, const string_view)
-    {
-        std::cout << "Unsupported Method AppInputPort::getCount\n";
-        return EC_METHOD_NOT_IMPLEMENTED;
-    }
+    static int list(const InputPortPtr& ip, const string_view item);
+    static int set(const InputPortPtr& ip, const string_view item, const string_view value);
+
+    static int getCount(const InputPortPtr& ip, const string_view item);
 
     friend OpenDaqObjectStaticImpl<OpenDaqObject, AppInputPort, InputPortPtr>;
 };

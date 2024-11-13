@@ -699,4 +699,14 @@ int AppSignal::LoadDataDescriptorFromJson(const string_view json)
     return EC_INVALID_JSON;
 }
 
+int AppSignal::getCount(const SignalPtr& signal, const string_view item)
+{
+    if (item == "related")
+    {
+        return signal.getRelatedSignals().getCount();
+    }
+
+    return AppPropertyObject::getCount(signal, item);
+}
+
 END_NAMESPACE_OPENDAQ

@@ -53,6 +53,7 @@ private:
     static void printProperty(const PropertyPtr& info);
     static std::string coreTypeToString(CoreType type);
 
+    friend AppSync;
     friend AppInputPort;
     friend AppChannel;
     friend AppSignal;

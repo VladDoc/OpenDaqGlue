@@ -29,6 +29,8 @@ private:
     static int              set(const FunctionBlockPtr& fb, const string_view item, const string_view value);
     static int              getCount(const FunctionBlockPtr& fb, const string_view item);
 
+    static int              ConnectToSignal(FunctionBlockPtr& fb, const SignalPtr& signal);
+
     friend OpenDaqObjectStaticImpl<OpenDaqObject, AppFunctionBlock, FunctionBlockPtr>;
     friend AppChannel;
 };

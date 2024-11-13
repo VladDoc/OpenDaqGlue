@@ -222,6 +222,11 @@ void Test_CheckInstance()
 	} while(0);
 
 	do {
+		PrintInfo("Listing function blocks:");
+		assert(OpenDaqObject_List(instance, "available-function-blocks") == EC_OK);
+	} while(0);
+
+	do {
 		PrintInfo("Listing properties: ");
 		assert(OpenDaqObject_List(instance, "properties") == EC_OK);
 	} while(0);
@@ -268,6 +273,21 @@ void Test_CheckInstance()
 		StringPool_Free(name);
 	} while(0);
 
+	DaqObjectPtr fb0 = NULL;
+	do {
+		PrintInfo("Adding Device:");
+
+		fb0 = Device_AddFunctionBlock(dev0, "RefFBModuleRenderer");
+		assert(fb0);
+
+		OpenDaqObject_List(fb0, "properties");
+
+		//OpenDaqObject_Set(fb0, "NumberOfChannels", "1");
+		//OpenDaqObject_Set(fb0, "GlobalSampleRate", "10000");
+		//OpenDaqObject_Set(fb0, "AcquisitionLoopTime", "10");
+	} while(0);
+	getchar();
+
 	DaqObjectPtr channel;
 	do {
 		PrintInfo("Reading Channel Properties");
@@ -277,7 +297,6 @@ void Test_CheckInstance()
 
 		OpenDaqObject_List(channel, "signals");
 		OpenDaqObject_List(channel, "input-ports");
-		OpenDaqObject_List(channel, "properties");
 
 		OpenDaqObject_Set(channel, "Amplitude", "6");
 		OpenDaqObject_Set(channel, "Frequency", "20");
@@ -292,6 +311,18 @@ void Test_CheckInstance()
 		//printf("SampleRate: %s", sampleRateReading);
 
 		StringPool_Free(sampleRateReading);
+	} while(0);
+
+	do {
+		PrintInfo("Reading Sync Properties");
+
+		DaqObjectPtr sync = OpenDaqObject_Select(dev0, "sync", 0);
+
+		OpenDaqObject_List(sync, "properties");
+
+		PrintInfo("Setting Value");
+		OpenDaqObject_Set(sync, "SynchronizationLocked", "false");
+		OpenDaqObject_List(sync, "properties");
 	} while(0);
 
 	DaqObjectPtr signal;

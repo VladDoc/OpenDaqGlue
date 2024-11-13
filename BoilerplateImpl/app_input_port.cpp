@@ -5,6 +5,7 @@
 #include <opendaq/search_filter_factory.h>
 
 #include "app_signal.h"
+#include "app_property_object.h"
 
 BEGIN_NAMESPACE_OPENDAQ
 
@@ -142,5 +143,21 @@ int AppInputPort::disconnect()
 {
     return disconnect(this->object);
 }
+
+int AppInputPort::list(const InputPortPtr& ip, const string_view item)
+{
+    return AppPropertyObject::list(ip, item);
+}
+
+int AppInputPort::set(const InputPortPtr& ip, const string_view item, const string_view value)
+{
+    return AppPropertyObject::set(ip, item, value);
+}
+
+int AppInputPort::getCount(const InputPortPtr& ip, const string_view item)
+{
+    return AppPropertyObject::getCount(ip, item);
+}
+
 
 END_NAMESPACE_OPENDAQ

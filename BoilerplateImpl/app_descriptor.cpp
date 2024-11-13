@@ -55,7 +55,7 @@ OpenDaqObjectPtr AppDescriptor::select(const DataDescriptorPtr& desc, const stri
 int AppDescriptor::set(const DataDescriptorPtr& desc, const string_view item, const string_view value)
 {
     // TODO: do set
-    return EC_OK;
+    return EC_METHOD_NOT_IMPLEMENTED;
 }
 
 int AppDescriptor::getCount(const DataDescriptorPtr& desc, const string_view item)
