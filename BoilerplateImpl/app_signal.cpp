@@ -5,6 +5,7 @@
 #include <charconv>
 #include <chrono>
 #include <thread>
+#include <unordered_set>
 
 #include "opendaq/opendaq.h"
 
@@ -12,6 +13,27 @@
 #include "app_descriptor.h"
 
 #include <nlohmann/json.hpp>
+
+BoundMultiReader::BoundMultiReader(const daq::ListPtr<daq::SignalPtr>& from, void** signal_ptrs) :
+    signals(
+        signal_ptrs,
+        signal_ptrs + from.getCount()
+    ),
+    daqSignalStorage(
+        from
+    ),
+    multireader(
+        daq::MultiReader(
+            from, daq::SampleType::Float64,
+            daq::SampleType::Int64, daq::ReadMode::Scaled,
+            daq::ReadTimeoutType::All)
+    ),
+    timereader(
+        daq::TimeReader(this->multireader)
+    )
+{
+    return;
+}
 
 
 BEGIN_NAMESPACE_OPENDAQ
@@ -508,6 +530,11 @@ void AppSignal::SendDataPacket(double* data, size_t count)
 {
     auto signal = this->object.asPtr<ISignalConfig>();
 
+    AppSignal::SendDataPacket(signal, data, count);
+}
+
+void AppSignal::SendDataPacket(const SignalConfigPtr& signal, double* data, size_t count)
+{
     auto packet = createPacketForSignal(signal, count, 0);
     auto packet_data = static_cast<double*>(packet.getData());
 
@@ -515,11 +542,16 @@ void AppSignal::SendDataPacket(double* data, size_t count)
     signal.sendPacket(packet);
 }
 
-// Sends one full turn of a sine wave
+
 void AppSignal::SendTestDataPacket(size_t count, double sine_range)
 {
     auto signal = this->object.asPtr<ISignalConfig>();
+    AppSignal::SendTestDataPacket(signal, count, sine_range);
+}
 
+// Sends one full turn of a sine wave
+void AppSignal::SendTestDataPacket(const SignalConfigPtr& signal, size_t count, double sine_range)
+{
     auto packet = createPacketForSignal(signal, count, 0);
     auto data = static_cast<double*>(packet.getData());
 
@@ -554,6 +586,7 @@ int AppSignal::Read(uint64_t NumOfSamples, int timeout)
         &status
     );
 
+    [[maybe_unused]]
     daq::ReadStatus whu_happen = status.getReadStatus();
 
     //std::cout << (int)whu_happen << std::endl;
@@ -707,6 +740,47 @@ int AppSignal::getCount(const SignalPtr& signal, const string_view item)
     }
 
     return AppPropertyObject::getCount(signal, item);
+}
+
+
+int AppSignal::MultiReaderFirstNullRead(
+        const BoundMultiReader& bound, size_t NumOfSignals)
+{
+    size_t count = 0;
+
+    std::vector<void*> data(NumOfSignals, nullptr);
+    std::vector<void*> timestamps(NumOfSignals, nullptr);
+
+    bound.timereader.readWithDomain(
+        data.data(),
+        (std::chrono::system_clock::time_point*)timestamps.data(),
+        &count
+    );
+    return count;
+}
+
+int AppSignal::ReadMulti(
+    const BoundMultiReader& bound, uint64_t NumOfSamples,
+    int timeout, double** data, int64_t** timestamps)
+{
+    auto status = MultiReaderStatus();
+    size_t count = NumOfSamples;
+
+    bound.timereader.readWithDomain(
+        data,
+        (std::chrono::system_clock::time_point*)timestamps,
+        &count,
+        timeout,
+        &status
+    );
+
+    //count = timeReader.getAvailableCount();
+
+    [[maybe_unused]]
+    daq::ReadStatus whu_happen = status.getReadStatus();
+    //std::cout << (int)whu_happen << std::endl;
+
+    return count;
 }
 
 END_NAMESPACE_OPENDAQ

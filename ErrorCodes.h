@@ -19,5 +19,7 @@ enum ErrorCodes
     EC_UNINITIALIZED             = -10,
     EC_INSUFFICIENT_SIZE         = -11,
     EC_INVALID_JSON              = -12,
-    EC_OPENDAQ_ERROR             = -13
+    EC_OPENDAQ_ERROR             = -13,
+    EC_SIGNAL_IS_ALREADY_BOUND   = -14,
+    EC_UNBOUND_SIGNAL_READ_ATTEMPT = -15
 };

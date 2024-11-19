@@ -1,6 +1,7 @@
 #pragma once
 
 extern int printf(const char*, ...);
+extern int puts(const char*);
 
 enum ColorAttribute
 {

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
+#include <list>
 
 #include "ErrorCodes.h"
 #include "BoilerplateImpl/stdout_redirect.h"
@@ -685,3 +686,80 @@ EXPORTFUN int          DataDescriptor_SaveToJsonFile(DaqObjectPtr self, const ch
 	return EC_GENERIC_ERROR;
 }
 
+static std::unordered_set<void*> bound_signals;
+static std::deque<BoundMultiReader> multireaders;
+
+int64 MultiReader_Bind(DaqObjectPtrArray signals, uint64 NumOfSignals)
+{
+	// Validation loop
+	for(auto i = 0u; i < NumOfSignals; ++i) {
+		auto obj = (OpenDaqObject*)signals[i];
+
+		if(!contains_uptr(createdPtrs, obj))
+			return EC_INVALID_POINTER;
+
+		auto signal = dynamic_cast<daq::AppSignal*>(obj);
+
+		if(!signal)
+			return EC_OBJECT_TYPE_MISMATCH;
+
+		if(bound_signals.find(obj) != bound_signals.end()) {
+			std::cout << "Signal[" << i << "] at "
+					  << std::hex  << (void*)obj
+					  << " is already bound to MultiReader" << std::endl;
+			return EC_SIGNAL_IS_ALREADY_BOUND;
+		}
+	}
+
+	try {
+		auto buffer = daq::List<daq::ISignal>();
+		// fill the buffer loop
+		for(auto i = 0u; i < NumOfSignals; ++i) {
+			auto obj = (OpenDaqObject*)signals[i];
+			bound_signals.insert(obj);
+
+			buffer.pushBack(obj->object.asPtr<daq::ISignal>());
+		}
+
+		BoundMultiReader bound(buffer, signals);
+		daq::AppSignal::MultiReaderFirstNullRead(bound, NumOfSignals);
+
+		multireaders.emplace_back(std::move(bound));
+		return multireaders.size() - 1;
+	} catch(...) {
+		// if exception occurred remove the signals from the bound set
+		for(auto i = 0u; i < NumOfSignals; ++i) {
+			bound_signals.erase(signals[i]);
+		}
+		return EC_GENERIC_ERROR;
+	}
+}
+
+int MultiReader_UnBind(int64 multiReaderId)
+{
+	try {
+		const auto& multiReader = multireaders.at(multiReaderId);
+
+		for(void* const signal : multiReader.signals) {
+			bound_signals.erase(signal);
+		}
+
+		multireaders.erase(multireaders.begin() + multiReaderId);
+	} catch(...) {}
+	return EC_OK;
+}
+
+int MultiReader_ReadToArrays(int64 multiReaderId,
+							 uint64 NumOfSamples, int timeout,
+							 double** data, int64** timestamps)
+{
+	try {
+		const auto& multiReader = multireaders.at(multiReaderId);
+
+		return daq::AppSignal::ReadMulti(multiReader, NumOfSamples, timeout, data, (int64_t**)timestamps);
+	} catch(const std::out_of_range&) {
+		return EC_ARRAY_OUT_OF_BOUNDS;
+	} catch(...) {
+		return EC_GENERIC_ERROR;
+	}
+}

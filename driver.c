@@ -21,6 +21,8 @@ const char* modulename = "./libopendaq-bridge.so";
 #define GETFUN(x, handle) (UGLYCAST(x) = dlsym(handle, #x))
 
 typedef void* DaqObjectPtr;
+typedef void** DaqObjectPtrArray;
+
 
 char*		  (*LibraryInfo)		     (void);
 void 		  (*LibraryHelp) 			 (void);
@@ -80,10 +82,13 @@ int          (*Signal_LoadDataDescriptorFromJsonFile)(DaqObjectPtr signal, const
 const char*  (*DataDescriptor_SaveToJson)(DaqObjectPtr signal);
 int          (*DataDescriptor_SaveToJsonFile)(DaqObjectPtr signal, const char* path);
 
+int 		 (*MultiReader_ReadToArrays)(int64_t multiReaderId,
+										 uint64_t NumOfSamples, int timeout,
+										 double** data, int64_t** timestamps);
 
+int64_t      (*MultiReader_Bind)(DaqObjectPtrArray signals, uint64_t NumOfSignals);
+int          (*MultiReader_UnBind)(int64_t multiReaderId);
 
-
-static const char* test_config_path = "config.json";
 
 void InitFunctions(void* handle)
 {
@@ -143,6 +148,9 @@ void InitFunctions(void* handle)
 	GETFUN(DataDescriptor_SaveToJsonFile, handle);
 
 	GETFUN(TimeStampToString, handle);
+	GETFUN(MultiReader_ReadToArrays, handle);
+	GETFUN(MultiReader_Bind, handle);
+	GETFUN(MultiReader_UnBind, handle);
 }
 
 void SaveToCSV(const char* path, double* values, int size)
@@ -179,6 +187,8 @@ void Test_CheckStdOutRedirect()
 	ResetColors();
 }
 
+
+static const char* test_config_path = "config.json";
 void Test_ChangeConfig()
 {
 	DaqObjectPtr instance = Instance_New();
@@ -209,6 +219,145 @@ void Test_ChangeConfig()
 	} while(0);
 
 	OpenDaqObject_Free(instance);
+}
+
+
+#define NUM_CHANNELS 2
+#define NUM_CHANNELS_STR "2"
+#define SAMPLE_RATE 1000
+#define SAMPLE_RATE_STR "1000"
+#define READING_TIMEOUT 40
+#define NUM_SAMPLES 20
+
+void Test_MultiRead()
+{
+	DaqObjectPtr instance = Instance_New();
+	assert(instance);
+
+	const char* connectionStringDev = NULL;
+	do {
+		int devIndex = 0;
+		connectionStringDev =
+			Device_GetAvailableDeviceConnectionString(instance, devIndex);
+		assert(connectionStringDev);
+		Info();
+		printf("Connection String for Device[%d]: %s\n", devIndex, connectionStringDev);
+		ResetColors();
+	} while(0);
+	DaqObjectPtr dev = NULL;
+	do {
+		PrintInfo("Adding Device:");
+
+		dev = Device_AddDevice(instance, connectionStringDev);
+
+		OpenDaqObject_Set(dev, "NumberOfChannels", NUM_CHANNELS_STR);
+		OpenDaqObject_Set(dev, "GlobalSampleRate", SAMPLE_RATE_STR);
+		OpenDaqObject_Set(dev, "AcquisitionLoopTime", "10");
+
+		OpenDaqObject_List(dev, "properties");
+	} while(0);
+
+
+	DaqObjectPtr channels[NUM_CHANNELS];
+
+	do {
+		PrintInfo("Selecting Channels:");
+
+		for(int i = 0; i < NUM_CHANNELS; ++i) {
+			channels[i] = OpenDaqObject_Select(dev, "channel", i);
+			assert(channels[i]);
+			Info();
+			printf("Channel #%d:\n", i);
+			ResetColors();
+			OpenDaqObject_List(channels[i], "properties");
+		}
+	} while(0);
+
+	DaqObjectPtr signals[NUM_CHANNELS];
+	do {
+		PrintInfo("Selecting Signals:");
+
+		for(int i = 0; i < NUM_CHANNELS; ++i) {
+			signals[i] = OpenDaqObject_Select(channels[i], "signal", 0);
+			assert(signals[i]);
+			Info();
+			printf("Signal #%d:\n", i);
+			ResetColors();
+			OpenDaqObject_List(signals[i], "properties");
+		}
+	} while(0);
+
+	int totalSamples = SAMPLE_RATE * 1; // sample rate * seconds
+
+	double* 	data[NUM_CHANNELS];
+	int64_t* 	times[NUM_CHANNELS];
+
+	for(int i = 0; i < NUM_CHANNELS; ++i) {
+		data[i] 	= calloc(totalSamples, sizeof(*data[i]));
+		times[i] 	= calloc(totalSamples, sizeof(*times[i]));
+	}
+
+	// create temp pointers to hold current positions within the sub-buffers
+	double* tempDataPtrs[NUM_CHANNELS];
+	int64_t* tempTimesPtrs[NUM_CHANNELS];
+
+	for(int i = 0; i < NUM_CHANNELS; ++i) {
+		tempDataPtrs[i] = &data[i][0];
+		tempTimesPtrs[i] = &times[i][0];
+	}
+
+	do {
+		PrintInfo("Reading Samples From All Signals");
+
+		int multireaderId = MultiReader_Bind(signals, NUM_CHANNELS);
+
+		int current = 0;
+		while(current < totalSamples) {
+			int count =
+				MultiReader_ReadToArrays(multireaderId, NUM_SAMPLES, READING_TIMEOUT,
+										 tempDataPtrs, tempTimesPtrs);
+
+			printf("Count: %d\n", count);
+			if(count == 0) continue;
+
+			// shift temp pointers by the amount read
+			for(int i = 0; i < NUM_CHANNELS; ++i) {
+				tempDataPtrs[i] += count;
+				tempTimesPtrs[i] += count;
+			}
+
+			if(current + count > totalSamples)
+				count = totalSamples - current;
+
+			current += count;
+		}
+		MultiReader_UnBind(multireaderId);
+
+		assert(current == totalSamples);
+
+		for(int i = 0; i < totalSamples; ++i) {
+			const char* timestr = TimeStampToString(times[0][i]);
+
+			printf("%f:%s\n", data[0][i], timestr);
+		}
+
+		for(int i = 0; i < NUM_CHANNELS; ++i) {
+			char output[128];
+			sprintf(output, "output-channel-%d.csv", i);
+
+			SaveToCSV(output, data[i], totalSamples);
+		}
+	} while(0);
+
+	for(int i = 0; i < NUM_CHANNELS; ++i) {
+		OpenDaqObject_Free(signals[i]);
+	}
+
+	for(int i = 0; i < NUM_CHANNELS; ++i) {
+		OpenDaqObject_Free(channels[i]);
+	}
+
+	OpenDaqObject_Free(dev);
 }
 
 void Test_CheckInstance()
@@ -275,7 +424,7 @@ void Test_CheckInstance()
 
 	DaqObjectPtr fb0 = NULL;
 	do {
-		PrintInfo("Adding Device:");
+		PrintInfo("Adding Function block:");
 
 		fb0 = Device_AddFunctionBlock(dev0, "RefFBModuleRenderer");
 		assert(fb0);
@@ -464,7 +613,8 @@ void Test_Main()
 {
 	Test_CheckStdOutRedirect();
 	//Test_ChangeConfig();
-	Test_CheckInstance();
+	//Test_CheckInstance();
+	Test_MultiRead();
 }
 
 int main(void)

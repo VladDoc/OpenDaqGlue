@@ -35,6 +35,9 @@
 *.kdev4
 /.kdev4
 
+# Kate BS
+/.cache
+
 # CMake BS
 /build
 

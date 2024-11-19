@@ -1,8 +1,10 @@
 #pragma once
 #include <opendaq/signal_ptr.h>
+#include <opendaq/signal_config_ptr.h>
 #include <opendaq/data_descriptor_ptr.h>
 #include <opendaq/stream_reader_ptr.h>
 #include <opendaq/time_reader.h>
+#include <opendaq/multi_reader_ptr.h>
 
 #include <string_view>
 #include <iostream>
@@ -37,6 +39,19 @@ struct SampleData
     void Erase()            { readings.clear();   timestamps.clear();   readCount = -1;}
 };
 
+struct BoundMultiReader
+{
+    std::vector<void*> signals;
+    daq::ListPtr<daq::SignalPtr> daqSignalStorage;
+	daq::MultiReaderPtr multireader;
+	daq::TimeReader<daq::MultiReaderPtr> timereader;
+
+    BoundMultiReader(const daq::ListPtr<daq::SignalPtr>& from, void** signal_ptrs);
+
+    BoundMultiReader(BoundMultiReader&&) = default;
+    BoundMultiReader& operator=(BoundMultiReader&&) = default;
+};
+
 BEGIN_NAMESPACE_OPENDAQ
 
 class AppDescriptor;
@@ -62,15 +77,24 @@ public:
     virtual int LoadDataDescriptorFromJson(const string_view json);
 
     SampleData samples{};
+
+    static int MultiReaderFirstNullRead(
+        const BoundMultiReader& bound, size_t NumOfSignals);
+
+    static int ReadMulti(
+        const BoundMultiReader& bound, uint64_t NumOfSamples,
+        int timeout, double** data, int64_t** timestamps);
+
 private:
     static void help();
     static int print(const SignalPtr& signal, const string_view item);
     static int list(const SignalPtr& signal, const string_view item);
     static int set(const SignalPtr& signal, const string_view item, const string_view value);
     static OpenDaqObjectPtr select(const SignalPtr& signal, const string_view item, uint64_t index);
-
     static int getCount(const SignalPtr& signal, const string_view item);
 
+    static void SendDataPacket(const SignalConfigPtr& signal, double* data, size_t count);
+    static void SendTestDataPacket(const SignalConfigPtr& signal, size_t count, double sine_range);
 
     static void printDataDescriptor(const DataDescriptorPtr& descriptor, std::streamsize indent, int indentLevel);
     static void printDimensions(const ListPtr<IDimension>& dimensions, std::streamsize indent, int indentLevel);

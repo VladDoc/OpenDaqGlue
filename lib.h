@@ -10,6 +10,7 @@ EXPORTFUN void          LibraryHelp(void);
 EXPORTFUN const char*   LibraryInfo(void);
 
 typedef void* DaqObjectPtr;
+typedef void** DaqObjectPtrArray;
 
 typedef unsigned long long uint64;
 typedef long long int64;
@@ -70,6 +71,15 @@ EXPORTFUN int          Signal_SendTestDataPacket(DaqObjectPtr signal, uint64 cou
 
 EXPORTFUN int          Signal_LoadDataDescriptorFromJson(DaqObjectPtr signal, const char* json);
 EXPORTFUN int          Signal_LoadDataDescriptorFromJsonFile(DaqObjectPtr signal, const char* path);
+
+
+// User buffers shall be atleast NumOfSignals * NumOfSamples in size
+EXPORTFUN int          MultiReader_ReadToArrays(
+    int64 multiReaderId, uint64 NumOfSamples, int timeout,
+    double** data, int64** timestamps);
+
+EXPORTFUN int64        MultiReader_Bind(DaqObjectPtrArray signals, uint64 NumOfSignals);
+EXPORTFUN int          MultiReader_UnBind(int64 multiReaderId);
 
 EXPORTFUN const char*  DataDescriptor_SaveToJson(DaqObjectPtr signal);
 EXPORTFUN int          DataDescriptor_SaveToJsonFile(DaqObjectPtr signal, const char* path);

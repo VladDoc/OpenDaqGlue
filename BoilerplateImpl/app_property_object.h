@@ -9,6 +9,7 @@
 
 BEGIN_NAMESPACE_OPENDAQ
 
+class AppSync;
 class AppDescriptor;
 class AppFunctionBlock;
 class AppDevice;
